@@ -395,6 +395,44 @@ Extra: See appendix
 
 Model the probability distribution of the inputs and the outputs $p(x,y)$ and then from there it recovers the conditional probability $p(y|x)$ to do the classification. Generative models can have more broad uses such as generating new data similar to the one modelled.
 
+####Mixture of Gaussians
+
+Given some data $X$, we supose that each $x$ has been generated from one among $K$ Gaussian distributions $N(\mu_k,\Sigma_k)$ and that the probability of appearance of each class is $p(k)=\pi_k$. Then, the parameters of the model would be the vector $\theta=\{\pi,\mu,\Sigma\}$, being each $\pi$, $\mu$, $\Sigma$ vectors of $K$ components each.  
+Since we assume each observation $x_n$ belongs to a class, there is a latent variable $z_n$ that tells the class to which $x_n$ belongs. The latent variable has distribution $z_n|\theta~Cat(\pi)$ and using the law of total probabilities we can characterize the probability of $X|\theta$ as
+$$p(X|\theta)=\int p(X|\theta,z)p(z|\theta)\text{d}z.$$
+The likelihood function of the Mixture of Gaussians is
+$$\mathcal{L}(X|\pi,\mu,\Sigma)=\sum\limits_{n=1}^N \ln\left(\sum\limits_{k=1}^K\pi_k \mathcal{N}(x_n|\mu_k,\Sigma_k\right).$$
+This does not have a closed-form solution, so we need to use some iterative technique to solve it (EM is a good one).
+
+
+
+#Numerical methods
+
+##Expectation Maximization (EM)
+
+Let us consider an escenario in which we have latent variables $Z$ with probability distribution $q(Z)$, observed variables $X$ (with features would be the same) and the parameters $w$. The idea, as usully, is to maximize the likelihood of $X$ respect the parameters $\text{argmax}(p(X|w))$. Imagine that this direct optimization is difficult, but using latent variables $Z$ we can solve it relatively easier (for example due to hierarchical properties in which we have prior-posterior conjugacy in the intermediate steps but not in the observed-parameters). Then, the EM algorithm is used.  
+We use the law of total probabilities on the likelihood $p(X|w)=\sum\limits_Z q(Z) p(X,Z|w)$ (changing sum by integral in the continuous case).  
+Using the definition of condition probability to decompose $\ln p(X,Z|w)=\ln p(Z|X,w)+\ln p(X|w)$, the log-likelihood can be decomposed as 
+$$\ln(p(X|w))=\mathcal{L}(q,w)-KL(q||p),$$
+where $\mathcal{L}(q,w)=\sum\limits_Z q(Z)\ln\{\frac{p(X,Z|w)}{q(Z)}\}$ and $KL(q||p)=\sum\limits_Z q(Z)\ln\{\frac{p(Z|X,w)}{q(Z)}\}$. 
+Since $KL$ (Kullback-Leibler) is always positive, in order to maximize with respect to $q(Z)$ while holding $w^{\text{old}}$ fixed, this will happen when it is equal to the posterior distribution $q(Z)=p(Z|X,w^{\text{old}})$. This is the E step.  
+Then, in the M step $q(Z)$ is held fixed and $\mathcal{L}(q,w)$ is maximized with respect to $w$. If we substitute $q(Z)$ by $p(Z|X,w^{\text{old}})$ in $$\mathcal{L}(q,w)=\sum\limits_Z p(Z|X,w^{\text{old}})\ln p(X,Z|w)-\sum\limits_Z p(Z|X,w^{\text{old}})\ln p(Z|X,w^{\text{old}})=Q(w,w^{\text{old}})+\text{const}.$$
+In this algorithm we start with some initial parameter $w^{\text{old}}$ and in the E step we evaluate the posterior distribution over latent variables. In this step, the lower bound of the $\mathcal{L}(w,w^{\text{old}})$, so we can only increase when we leave $q(Z)$ constant. After this, in the M step a new $w^{\text{new}}$ is found by maximizing the likelihood.  
+
+**Example: Mixture of Gaussians** 
+
+As the mechanism for EM is to mazimize $Q(w,w^{\text{old}})$, we can concentrate in both steps in $Q(w,w^{\text{old}})$ (the rest of the equation is not necessary in order to maximize). 
+$$Q(w,w^{\text{old}})=E_{z|w^{\text{old}},X}[\log p(X,z|w)].$$
+Using $p(X,z|w)=p(X|w,z)p(z|w)$ and factorizing
+$$Q(w,w^{\text{old}}) =E_{z|w^{\text{old}},X}\left[\sum\limits_n\log p(x_n|w,z_n)+\sum\limits_n p(z_n|w)\right],$$
+$$Q(w,w^{\text{old}})=\sum\limits_n(E_{z_n|w^{\text{old},x_n}}[\log p(x_n|w,z_n)+\log(z_n|w)]),$$
+$$Q(w,w^{\text{old}})=\sum\limits_n\sum\limits_k p(z_n=k|w^{\text{old}},x_n)(log p(x_n|w_k)+\log p(z_n=k|w_k)).$$
+In the E step we update the $\theta_k^E =p(z_n=k|w^{\text{old}},x_n)=\frac{\pi_k p(x_n|w_k^{\text{old}})}{\sum\limits_k\pi_k p(x_n|w^{\text{old}})}$.  
+In the M step we maximize find $w^{\text{new}}$ maximizing $Q(w,w^{\text{old}})$ over $w$.
+$$w^{\text{new}}=\text{argmax}_{w}\{Q(w,w^{\text{old}})\}.$$
+In the Gaussian mixture model we have a closed-form, and the parameters result as
+$\pi_k^{\text{new}}=\frac{1}{N}\sum\limits_n\theta_k^E$,  $\mu_k^{\text{new}}=\frac{1}{N}\sum\limits_n\theta_k^E x_n$, $\Sigma_k^{\text{new}}=\frac{1}{N}\sum\limits_n\theta_k^E (x_n-\mu_k^{\text{new}})(x_n-\mu_k^{\text{new}})^T.$
+
 
 
 
@@ -417,6 +455,17 @@ Model the probability distribution of the inputs and the outputs $p(x,y)$ and th
 
 
 #Appendix
+
+##Regressions seen
+
+**Linear regression model:** $t|x\sim\mathcal{N}(y(x),q^{-1})$. Naive model. R:lm(formula, data, subset, weights, na.action,
+   method = "qr", model = TRUE, x = FALSE, y = FALSE, qr = TRUE,
+   singular.ok = TRUE, contrasts = NULL, offset, ...)    
+**Ridge regression:** $p(w)\sim\mathcal{N}(w|\mu,(q\lambda I)^{-1})$. Corresponds to adding a penalty in form of $\lambda||w||_2^2$. R: lm.ridge(formula, data, subset, na.action, lambda = 0, model = FALSE,
+         x = FALSE, y = FALSE, contrasts = NULL, ...) (library(MASS))  
+**Lasso regression:** Corresponds to adding a penalty in form of $\lambda||w||_1$ (see prova.R)  
+**Robust regression:** $t|X,w,q,\eta\sim\mathcal{N}(\Phi w,(q\text{diag}(\eta))^{-1})$ where $\eta_n\sim\text{Gamma}(\frac{\nu}{2},\frac{\nu}{2}-1)$
+
 
 ## Logistic regression
 
