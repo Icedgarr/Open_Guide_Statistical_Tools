@@ -68,7 +68,7 @@ Note that in the above, we apply the shrinkage penalty to all $\beta$ parameters
 When centering and standardising our variables, Ridge becomes selecting $\beta$ which minimises:
 $$\sum_{i=1}^n(y_i - \sum_{j=1}^p\beta_jx_{ij})^2 + \lambda \sum_{j=1}^p\beta_j^2 = RSS + \lambda \sum_{j=1}^p\beta_j^2$$
 
-For low values of $\lambda$, our Ridge regression constrains very little, and at $\lambda = 0$, we just run MLE, where we have low bias, but have higher variance. At $\lambda$ at very high values, we drive all our $\beta$ estimates to 0, with higher variance, but low variance. We want to find the $\lambda$ which minimises MSE (not just RSS or high $R^2$, as these measure how well our model fits the training data, but do not guarantee a good fit for our test data, so it may no predict well new observations).
+For low values of $\lambda$, our Ridge regression constrains very little, and at $\lambda = 0$, we just run MLE, where we have low bias, but have higher variance. At $\lambda$ at very high values, we drive all our $\beta$ estimates to 0, with higher bias, but low variance. We want to find the $\lambda$ which minimises MSE (not just RSS or high $R^2$, as these measure how well our model fits the training data, but do not guarantee a good fit for our test data, so it may no predict well new observations).
 
 Note that the Ridge regression constraint is circular (or spherical, or hyperspherical in higher dimensions) combination of the various $\beta_j$s, so the contour function for the RSS is very likely to include a combination of our variables, but the estimated $\beta_j$s will be small.
 
@@ -236,7 +236,7 @@ These plots suggest that we could just use 2 principal components, as adding the
 ## Outliers detection
 
 ### Leverage
-The basic tool to examine the fit are the residuals, which are not independent and sum to 0 if there is the intercept. Their covariance matrix is $var(e)=\sigma^2[I-H]$. The leverage of an observation point $i$ is $h_{ii}$ of the $H=X(X^TX)^{-1}H$ matrix. Since the trace of $H$ is $p$ (the dimension of the model space), we say that $h_ii$ is large if it is three times greater than the average. So if $h_ii\geq \frac{3(M+1)}{N}$.
+The basic tool to examine the fit are the residuals, which are not independent and sum to 0 if there is the intercept. Their covariance matrix is $var(e)=\sigma^2[I-H]$. The leverage of an observation point $i$ is $h_{ii}$ of the $H=X(X^TX)^{-1}H$ matrix. Since the trace of $H$ is $p$ (the dimension of the model space), we say that $h_{ii}$ is large if it is three times greater than the average. So if $h_{ii}\geq \frac{3(M+1)}{N}$.
 
 Plotting the standarized residuals vs leverage or fitted values coloring the ones with high leverage gives a good insight. In order to do that we need a model that may fit well the data, otherwise we may not see the outliers.
 
@@ -291,8 +291,7 @@ sigmoid = function(x) {
 }
 
 curve(sigmoid,from=-3,to=3)
-par(new=TRUE)
-curve(0.5+0*x,from=-3,to=3,col="red")
+curve(0.5+0*x,from=-3,to=3,col="red",add=T)
 
 ```
 
